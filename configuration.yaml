@@ -12,9 +12,9 @@ scene: !include scenes.yaml
 
 sensor:
   - platform: netdata
-    host: "192.168.1.1"
-    port: "19999"
-    name: "ImmortalWrt"
+    host: "192.168.1.1"  #openwrt ip地址
+    port: "19999"        #netdata端口号
+    name: "ImmortalWrt"  #设备hostname，如果有自定义将下方immortalwrt全部修改为你的hostname
     resources:
       system.load1:
         data_group: system.load
@@ -55,12 +55,12 @@ sensor:
       immortalwrt_tx_mb:
         friendly_name: "ImmortalWrt上传速度(MB/s)"
         unit_of_measurement: "MB/s"
-        value_template: "{{ (states('sensor.immortalwrt_eth1_tx') | float / 8 / 1000) | abs | round(2) }}"
+        value_template: "{{ (states('sensor.immortalwrt_eth1_tx') | float / 8 / 1000) | abs | round(2) }}"    #我是默认eth1为wan口，如果监控别的网口，自定义更换
 
       immortalwrt_rx_mb:
         friendly_name: "ImmortalWrt下载速度(MB/s)"
         unit_of_measurement: "MB/s"
-        value_template: "{{ (states('sensor.immortalwrt_eth1_rx') | float / 8 / 1000) | abs | round(2) }}"
+        value_template: "{{ (states('sensor.immortalwrt_eth1_rx') | float / 8 / 1000) | abs | round(2) }}"    #我是默认eth1为wan口，如果监控别的网口，自定义更换
 
       daily_upload_combined:
         friendly_name: "每日上传流量"
@@ -103,11 +103,3 @@ sensor:
       immortalwrt_active_connections_clean:
         friendly_name: "ImmortalWrt活动连接数"
         value_template: "{{ states('sensor.immortalwrt_active_connections') | int }}"
-
-history:
-  include:
-    entities:
-      - sensor.immortalwrt_tx_mb
-      - sensor.immortalwrt_rx_mb
-      - sensor.daily_upload_combined
-      - sensor.daily_download_combined
