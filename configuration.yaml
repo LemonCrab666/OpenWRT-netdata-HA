@@ -1,0 +1,113 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+sensor:
+  - platform: netdata
+    host: "192.168.1.1"
+    port: "19999"
+    name: "ImmortalWrt"
+    resources:
+      system.load1:
+        data_group: system.load
+        element: load1
+      system.load5:
+        data_group: system.load
+        element: load5
+      system.load15:
+        data_group: system.load
+        element: load15
+      system.ram_used:
+        data_group: system.ram
+        element: used
+      system.ram_free:
+        data_group: system.ram
+        element: free
+      system.ram_cached:
+        data_group: system.ram
+        element: cached
+      system.ram_buffers:
+        data_group: system.ram
+        element: buffers
+      eth1.rx:
+        data_group: net.eth1
+        element: received
+      eth1.tx:
+        data_group: net.eth1
+        element: sent
+      system_uptime:
+        data_group: "system.uptime"
+        element: "uptime"
+      active_connections:
+        data_group: "netfilter.conntrack_sockets"
+        element: "connections"
+
+  - platform: template
+    sensors:
+      immortalwrt_tx_mb:
+        friendly_name: "ImmortalWrt上传速度(MB/s)"
+        unit_of_measurement: "MB/s"
+        value_template: "{{ (states('sensor.immortalwrt_eth1_tx') | float / 8 / 1000) | abs | round(2) }}"
+
+      immortalwrt_rx_mb:
+        friendly_name: "ImmortalWrt下载速度(MB/s)"
+        unit_of_measurement: "MB/s"
+        value_template: "{{ (states('sensor.immortalwrt_eth1_rx') | float / 8 / 1000) | abs | round(2) }}"
+
+      daily_upload_combined:
+        friendly_name: "每日上传流量"
+        value_template: >
+          {% set upload_mb = states('sensor.daily_upload_traffic') | float %}
+          {% if upload_mb > 1024 %}
+            {{ (upload_mb / 1024) | round(2) }} GB
+          {% else %}
+            {{ upload_mb | round(2) }} MB
+          {% endif %}
+
+      daily_download_combined:
+        friendly_name: "每日下载流量"
+        value_template: >
+          {% set download_mb = states('sensor.daily_download_traffic') | float %}
+          {% if download_mb > 1024 %}
+            {{ (download_mb / 1024) | round(2) }} GB
+          {% else %}
+            {{ download_mb | round(2) }} MB
+          {% endif %}
+
+      immortalwrt_uptime_formatted:
+        friendly_name: "ImmortalWrt运行时间"
+        value_template: >
+          {% set uptime = states('sensor.immortalwrt_system_uptime') | int %}
+          {% set days = uptime // (24 * 3600) %}
+          {% set hours = (uptime % (24 * 3600)) // 3600 %}
+          {% set minutes = (uptime % 3600) // 60 %}
+          {% set seconds = uptime % 60 %}
+          {% if days > 0 %}
+            {{ days }} 天 {{ hours }} 小时 {{ minutes }} 分 {{ seconds }} 秒
+          {% elif hours > 0 %}
+            {{ hours }} 小时 {{ minutes }} 分 {{ seconds }} 秒
+          {% elif minutes > 0 %}
+            {{ minutes }} 分 {{ seconds }} 秒
+          {% else %}
+            {{ seconds }} 秒
+          {% endif %}
+
+      immortalwrt_active_connections_clean:
+        friendly_name: "ImmortalWrt活动连接数"
+        value_template: "{{ states('sensor.immortalwrt_active_connections') | int }}"
+
+history:
+  include:
+    entities:
+      - sensor.immortalwrt_tx_mb
+      - sensor.immortalwrt_rx_mb
+      - sensor.daily_upload_combined
+      - sensor.daily_download_combined
